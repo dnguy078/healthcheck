@@ -4,55 +4,52 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"os"
-	"os/signal"
-	"time"
+
+	"github.com/dnguy078/healthcheck/pkg/storage"
 )
 
+// Server is a http server
 type Server struct {
 	httpServer *http.Server
 	router     *http.ServeMux
-	host       string
-	port       string
+	addr       string
+	sslCert    string
+	sslKey     string
 	quit       chan bool
 }
 
-func NewServer(port string, dbPath string, dbSchemaPath string, geoSeedPath string) (*Server, error) {
+// NewServer returns a http server
+func NewServer(addr string, sslCert string, sslKey string, db *storage.Collection) (*Server, error) {
 	router := http.NewServeMux()
+	httpServer := &http.Server{Addr: addr, Handler: router}
 
-	httpServer := &http.Server{Addr: port, Handler: router}
+	hh := &HealthCheckHandler{db}
 
-	// router.HandleFunc("/detect", endpoints.WithLogging(dh.Detect))
+	router.Handle("/api/health/checks/", hh)
+	router.Handle("/api/health/checks", hh)
+
 	return &Server{
 		router:     router,
-		port:       port,
+		addr:       addr,
+		sslCert:    sslCert,
+		sslKey:     sslKey,
 		httpServer: httpServer,
-		quit:       make(chan bool),
 	}, nil
 }
 
-func (s *Server) Start() error {
-	log.Printf("Starting http service on %s", s.port)
-	// Start server
+// Start starts the server
+func (s *Server) Start() {
+	log.Printf("Starting http service on %s", s.addr)
 	go func() {
+		// if err := s.httpServer.ListenAndServeTLS(s.sslCert, s.sslKey); err != nil {
 		if err := s.httpServer.ListenAndServe(); err != nil {
 			log.Fatal(err)
 		}
 	}()
-
-	quit := make(chan os.Signal)
-	signal.Notify(quit, os.Interrupt)
-	<-quit
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	if err := s.Stop(ctx); err != nil {
-		return err
-	}
-	return nil
 }
 
+// Stop gracefully stops the server
 func (s *Server) Stop(ctx context.Context) error {
-	log.Println("gracefully shutting down")
-
+	log.Println("Stopping http server")
 	return s.httpServer.Shutdown(ctx)
 }
