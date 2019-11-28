@@ -41,8 +41,8 @@ func NewServer(addr string, sslCert string, sslKey string, db *storage.Collectio
 func (s *Server) Start() {
 	log.Printf("Starting http service on %s", s.addr)
 	go func() {
-		// if err := s.httpServer.ListenAndServeTLS(s.sslCert, s.sslKey); err != nil {
-		if err := s.httpServer.ListenAndServe(); err != nil {
+		if err := s.httpServer.ListenAndServeTLS(s.sslCert, s.sslKey); err != nil {
+			// if err := s.httpServer.ListenAndServe(); err != nil {
 			log.Fatal(err)
 		}
 	}()
