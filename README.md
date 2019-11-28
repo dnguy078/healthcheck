@@ -46,18 +46,10 @@ Response:
             "checked": 1574906832,
             "duration": "446.04934ms"
         },
-        {
-            "id": "3270379B-7D25-AE0D-7DCF-D4E7AA7BDBA1",
-            "status": "200 OK",
-            "code": 200,
-            "endpoint": "https://www.blizzard.com/en-us/",
-            "checked": 1574906832,
-            "duration": "455.045074ms"
-        }
     ],
     "page": 0,
-    "total": 2,
-    "size": 2
+    "total": 1,
+    "size": 10
 }
 ```
 

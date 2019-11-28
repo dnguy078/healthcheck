@@ -70,7 +70,7 @@ func (hh *HealthCheckHandler) List(w http.ResponseWriter, r *http.Request) {
 		Items: paginated,
 		Total: len(list),
 		Page:  page,
-		Size:  len(paginated),
+		Size:  10,
 	}
 
 	b, err := json.Marshal(res)
@@ -125,7 +125,7 @@ func (hh *HealthCheckHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := hh.db.Create(hc); err != nil {
-		http.Error(w, marshalError("empty healthcheck endpoint"), http.StatusBadRequest)
+		http.Error(w, marshalError(err.Error()), http.StatusBadRequest)
 		return
 	}
 
