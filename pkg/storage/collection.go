@@ -73,7 +73,10 @@ func (c *Collection) Create(input *models.HealthCheck) error {
 func (c *Collection) Delete(id string) {
 	c.Lock()
 	defer c.Unlock()
-	delete(c.data, id)
+	if hc, found := c.data[id]; found {
+		delete(c.registeredURLs, hc.Endpoint)
+		delete(c.data, id)
+	}
 }
 
 // Dump takes all existing healthchecks and writes them to disk in JSON format

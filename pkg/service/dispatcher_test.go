@@ -1,7 +1,9 @@
 package service
 
 import (
-	"reflect"
+	"net"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -9,22 +11,57 @@ import (
 )
 
 func TestRun(t *testing.T) {
-	type args struct {
-		hc      *models.HealthCheck
-		timeout time.Duration
-	}
 	tests := []struct {
-		name string
-		args args
-		want *models.HealthCheck
+		name           string
+		expectedStatus int32
+		mockServer     bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:           "success",
+			expectedStatus: http.StatusOK,
+			mockServer:     true,
+		},
+		{
+			name:           "url is down",
+			expectedStatus: 0,
+			mockServer:     false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := Run(tt.args.hc, tt.args.timeout); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Run() = %v, want %v", got, tt.want)
+			s := startServer(t)
+
+			if tt.mockServer {
+				s.Start()
+				defer s.Close()
+			}
+
+			hc := &models.HealthCheck{
+				Endpoint: s.URL,
+			}
+
+			got := Run(hc, 1*time.Second)
+			if got == nil {
+				t.Error("expected to return a healthcheck")
+				return
+			}
+			if got.Code != tt.expectedStatus {
+				t.Error("expected to have status OK")
 			}
 		})
 	}
+}
+
+func startServer(t *testing.T) *httptest.Server {
+	ts := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte{})
+	}))
+	l, err := net.Listen("tcp", "localhost:1111")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ts.Listener = l
+	return ts
 }
