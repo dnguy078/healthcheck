@@ -18,6 +18,7 @@ var (
 	address   string
 	sslCert   string
 	sslKey    string
+	runSSL    bool
 	frequency string
 	dataFile  string
 )
@@ -28,6 +29,7 @@ func init() {
 	flag.StringVar(&sslKey, "sslKey", "key.pem", "ssl key")
 	flag.StringVar(&frequency, "checkfrequency", "3s", "frequency to run registered healthchecks")
 	flag.StringVar(&dataFile, "datafile", "./pkg/storage/temp/data.json", "file containing existing healthchecks, loaded from disk")
+	flag.BoolVar(&runSSL, "runSSL", false, "run with ssl")
 	flag.Parse()
 }
 
