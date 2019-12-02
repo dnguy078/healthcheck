@@ -28,6 +28,12 @@ ie)
 go run cmd/main.go --checkfrequency=1s
 ```
 
+
+## GoDocs
+```
+[GoDocs](https://godoc.org/github.com/dnguy078/healthcheck)
+```
+
 ## API:
 ### List Health Checks
 Returns a list of health checks sorted by endpoint with paging support of 10 items per page. (pagination begins at 0, and sorted alphabetically by endpoint)
