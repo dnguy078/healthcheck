@@ -30,7 +30,7 @@ go run cmd/main.go --checkfrequency=1s
 
 ## API:
 ### List Health Checks
-Returns a list of health checks sorted by endpoint with paging support of 10 items per page.
+Returns a list of health checks sorted by endpoint with paging support of 10 items per page. (pagination begins at 0, and sorted alphabetically by endpoint)
 ```json
 Request:
 curl http://127.0.0.1:8080/api/health/checks?page=0

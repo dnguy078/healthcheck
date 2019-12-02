@@ -9,52 +9,6 @@ import (
 	"github.com/dnguy078/healthcheck/pkg/models"
 )
 
-var (
-	maxWorkers         = 10
-	defaultClient      = http.DefaultClient
-	defaultHTTPTimeout = 1 * time.Second
-)
-
-// Dispatcher spins up a group of goroutines to process healthchecks
-type Dispatcher struct {
-	jobs   chan *models.HealthCheck
-	result chan *models.HealthCheck
-	quit   chan bool
-}
-
-// NewDispatcher returns a dispatcher
-func NewDispatcher(incoming chan *models.HealthCheck, result chan *models.HealthCheck) (*Dispatcher, error) {
-	return &Dispatcher{
-		jobs:   incoming,
-		result: result,
-		quit:   make(chan bool),
-	}, nil
-}
-
-// Process routes message to pool of workers to perform healthchecks
-func (d *Dispatcher) Process(hc *models.HealthCheck) {
-	d.jobs <- hc
-}
-
-// Stop stops pool of workers
-func (d *Dispatcher) Stop() {
-	close(d.quit)
-}
-
-// Run spins up workers
-func (d *Dispatcher) Run() {
-	for i := 0; i < maxWorkers; i++ {
-		worker := Worker{
-			id:       i,
-			jobQueue: d.jobs,
-			quit:     d.quit,
-			results:  d.result,
-		}
-
-		go worker.Start()
-	}
-}
-
 // Worker is a goroutine that performs healthchecks
 type Worker struct {
 	id       int
@@ -63,7 +17,7 @@ type Worker struct {
 	quit     chan bool
 }
 
-// Start method starts the run loop listening for a job to come in and also listening for a quit signal to stop
+// Start method listens for incoming work and runs healthchecks
 func (w Worker) Start() {
 	for {
 		select {

@@ -2,18 +2,25 @@ package service
 
 import (
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/dnguy078/healthcheck/pkg/models"
 )
 
+var (
+	maxWorkers         = 10
+	defaultClient      = http.DefaultClient
+	defaultHTTPTimeout = 1 * time.Second
+)
+
 // Reporter schedules the healthcheck based on checkFrequency
 type Reporter struct {
-	tickRate   time.Duration
-	quit       chan bool
-	results    chan *models.HealthCheck
-	dispatcher *Dispatcher
-	storage    hcStorage
+	tickRate time.Duration
+	quit     chan bool
+	results  chan *models.HealthCheck
+	storage  hcStorage
+	jobQueue chan *models.HealthCheck
 }
 
 type hcStorage interface {
@@ -23,21 +30,27 @@ type hcStorage interface {
 
 // NewReporter returns a reporter
 func NewReporter(frequencyRate time.Duration, db hcStorage) (*Reporter, error) {
-	incoming := make(chan *models.HealthCheck)
 	results := make(chan *models.HealthCheck)
-	d, err := NewDispatcher(incoming, results)
-	if err != nil {
-		return nil, err
+	r := &Reporter{
+		tickRate: frequencyRate,
+		quit:     make(chan bool),
+		results:  results,
+		jobQueue: make(chan *models.HealthCheck),
+		storage:  db,
 	}
-	d.Run()
 
-	return &Reporter{
-		tickRate:   frequencyRate,
-		quit:       make(chan bool),
-		dispatcher: d,
-		results:    results,
-		storage:    db,
-	}, nil
+	for i := 0; i < maxWorkers; i++ {
+		worker := Worker{
+			id:       i,
+			jobQueue: r.jobQueue,
+			quit:     r.quit,
+			results:  r.results,
+		}
+
+		go worker.Start()
+	}
+
+	return r, nil
 }
 
 // Report ticks based upon check frequency and routes healthchecks to be performed to the dispatcher
@@ -50,13 +63,12 @@ func (r *Reporter) Report() {
 				list := r.storage.List()
 
 				for _, hc := range list {
-					r.dispatcher.Process(hc)
+					r.jobQueue <- hc
 				}
 			case res := <-r.results:
 				go r.storage.Create(res)
 			case <-r.quit:
 				ticker.Stop()
-				r.dispatcher.Stop()
 				return
 			}
 		}
