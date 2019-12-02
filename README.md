@@ -28,11 +28,8 @@ ie)
 go run cmd/main.go --checkfrequency=1s
 ```
 
-
 ## GoDocs
-```
 [GoDocs](https://godoc.org/github.com/dnguy078/healthcheck)
-```
 
 ## API:
 ### List Health Checks
